@@ -1,0 +1,191 @@
+try:
+    import requests
+    from bs4 import BeautifulSoup
+    from sklearn.feature_extraction.text import CountVectorizer
+    from sklearn.ensemble import RandomForestClassifier
+    import numpy as np
+    from selenium import webdriver
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.chrome.service import Service
+    from selenium.webdriver.chrome.options import Options
+    from webdriver_manager.chrome import ChromeDriverManager
+    from datetime import datetime
+except ImportError as e:
+    print(f"Error: {e}. Please make sure all required libraries are installed.")
+    print("Use the following command to install missing libraries:")
+    print("pip install requests beautifulsoup4 scikit-learn numpy selenium webdriver-manager")
+    exit(1)  # Exit the script if any required library is missing
+
+# Sample expanded dataset of URLs with labels (0 for safe, 1 for vulnerable)
+expanded_dataset = [
+    ("http://example.com/index.php?id=1", 0),
+    ("http://example.com/index.php?id=1' OR '1'='1", 1),
+    ("http://example.com/search.php?q=hello", 0),
+    ("http://example.com/search.php?q=<script>alert('XSS')</script>", 1),
+    ("http://example.com/form.php?input=<img src='x' onerror='alert(1)'>", 1),
+    ("http://example.com/home", 0),
+    ("http://example.com/login?username=admin&password=12345", 1),
+    ("http://example.com/profile?id=2 AND 1=1", 1)
+]
+
+# Extract URLs and labels from the expanded dataset
+urls, labels = zip(*expanded_dataset)
+
+# Feature extraction
+def extract_features(urls):
+    vectorizer = CountVectorizer()
+    X = vectorizer.fit_transform(urls)
+    return X, vectorizer
+
+X, vectorizer = extract_features(urls)
+y = np.array(labels)
+
+# Train a machine learning model (RandomForestClassifier) on the dataset
+model = RandomForestClassifier()
+model.fit(X, y)
+
+# Web crawler using Selenium to discover all pages and endpoints of a target website
+def crawl(url):
+    chrome_options = Options()
+    chrome_options.binary_location = "C:/Program Files/Google/Chrome/Application/chrome.exe"  # Update the path to your Chrome binary
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+    driver.get(url)
+
+    pages = set()
+    links = driver.find_elements(By.TAG_NAME, 'a')
+    for link in links:
+        href = link.get_attribute('href')
+        if href and href.startswith(url):
+            pages.add(href)
+
+    driver.quit()
+    print(f"Discovered pages: {pages}")  # Debug print statement
+    return pages
+
+# Function to analyze the content of web pages using NLP
+def analyze_content(url):
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text, 'html.parser')
+    scripts = soup.find_all('script')
+    for script in scripts:
+        if '<script>' in script.text.lower():
+            return 1  # Potential vulnerability
+    return 0  # No vulnerabilities found
+
+# Enhanced function to check for SQL injection vulnerabilities with contextual validation
+def check_sql_injection(url):
+    payloads = ["'", '"', ' OR 1=1', ' OR 1=1--', ' OR 1=1#']
+    error_indicators = ["sql syntax", "sql error", "unclosed quotation mark", "syntax error"]
+    for payload in payloads:
+        test_url = url + payload
+        response = requests.get(test_url)
+        # Check for common SQL error indicators
+        for error in error_indicators:
+            if error in response.text.lower():
+                return True
+    return False
+
+
+# Function to check for XSS vulnerabilities
+def check_xss(url):
+    payloads = ["<script>alert(1)</script>", "<img src='x' onerror='alert(1)'>"]
+    for payload in payloads:
+        test_url = url + payload
+        response = requests.get(test_url)
+        if payload in response.text:
+            return True
+    return False
+
+# Enhanced function to check for CSRF vulnerabilities with contextual validation
+def check_csrf(url):
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text, 'html.parser')
+    forms = soup.find_all('form')
+    for form in forms:
+        inputs = form.find_all('input')
+        has_csrf_token = any(input.get('name') in ['csrf_token', 'authenticity_token', 'token'] for input in inputs)
+        # Validate if form actions require authentication
+        requires_auth = any(input.get('type') == 'password' for input in inputs)
+        if not has_csrf_token and requires_auth:
+            return True
+    return False
+
+# Function to scan a URL using the machine learning model and additional vulnerability checks
+def scan_url(url):
+    features = vectorizer.transform([url])
+    prediction = model.predict(features)
+    print(f"Scanning {url}...")  # Debug print statement
+
+    vulnerabilities = []
+    if prediction == 1:
+        vulnerabilities.append("Machine Learning Model")
+    if analyze_content(url) == 1:
+        vulnerabilities.append("Suspicious Script Content")
+    if check_sql_injection(url):
+        vulnerabilities.append("SQL Injection")
+    if check_xss(url):
+        vulnerabilities.append("Cross-Site Scripting (XSS)")
+    if check_csrf(url):
+        vulnerabilities.append("Cross-Site Request Forgery (CSRF)")
+
+    if vulnerabilities:
+        print(f"Potential vulnerabilities found at {url}: {', '.join(vulnerabilities)}")
+        return True
+    else:
+        print(f"No vulnerabilities found at {url}")
+        return False
+    
+# Function to generate enhanced reports with reduced false positives
+def generate_enhanced_report(vulnerable_urls):
+    report = []
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    summary = {
+        "total_urls_scanned": len(vulnerable_urls),
+        "total_vulnerabilities": len(vulnerable_urls)
+    }
+
+    report.append(f"Scan Report - {timestamp}")
+    report.append("=" * 50)
+    report.append(f"Total URLs Scanned: {summary['total_urls_scanned']}")
+    report.append(f"Total Vulnerabilities Found: {summary['total_vulnerabilities']}")
+    report.append("=" * 50)
+    report.append("\nDetailed Findings:\n")
+
+    for url in vulnerable_urls:
+        report.append(f"Vulnerable URL: {url}")
+        if check_sql_injection(url):
+            report.append(" - Vulnerability: SQL Injection (High Risk)")
+            report.append("   - Remediation: Use parameterized queries to prevent SQL injection attacks.")
+        if check_xss(url):
+            report.append(" - Vulnerability: Cross-Site Scripting (XSS) (Medium Risk)")
+            report.append("   - Remediation: Implement proper input validation and output encoding.")
+        if check_csrf(url):
+            report.append(" - Vulnerability: Cross-Site Request Forgery (CSRF) (Medium Risk)")
+            report.append("   - Remediation: Include CSRF tokens in forms and verify them on the server side.")
+        if analyze_content(url) == 1:
+            report.append(" - Vulnerability: Suspicious Script Content (Low Risk)")
+            report.append("   - Remediation: Review and sanitize script content to ensure it is safe.")
+        
+        report.append("-" * 50)
+
+    return "\n".join(report)
+
+# Main function to initiate the scanning process and generate enhanced reports
+if __name__ == "__main__":
+    target_url = input("Please enter the target URL: ").split('#')[0]  # Remove fragment if present
+    pages = crawl(target_url)
+    vulnerable_urls = []
+
+    if pages:
+        for page in pages:
+            if scan_url(page):
+                vulnerable_urls.append(page)
+
+        if vulnerable_urls:
+            report = generate_enhanced_report(vulnerable_urls)
+            print("\nEnhanced Scan Report:\n")
+            print(report)
+        else:
+            print("No vulnerabilities found.")
+    else:
+        print("No pages discovered. Please check the URL and try again.")
