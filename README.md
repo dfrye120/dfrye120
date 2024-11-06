@@ -1,6 +1,6 @@
 - 👋 Hi, I’m @dfrye120
 - 👀 I’m interested in ... Work
-- 🌱 I’m currently learning ... Cybersecurity
+- 🌱 I’m currently learning ... Cybersecurity and coding in python
 - 💞️ I’m looking to collaborate on ... whatever
 - 📫 How to reach me ...
 - 😄 Pronouns: ...
