@@ -1,7 +1,7 @@
 - 👋 Hi, I’m @dfrye120
-- 👀 I’m interested in ... Work
+- 👀 I’m interested in ... Learning and collaborating
 - 🌱 I’m currently learning ... Cybersecurity and coding in python
-- 💞️ I’m looking to collaborate on ... whatever
+- 💞️ I’m looking to collaborate on ... anything
 - 📫 How to reach me ...
 - 😄 Pronouns: ...
 - ⚡ Fun fact: ... I have never won a hot dog eating contest!
