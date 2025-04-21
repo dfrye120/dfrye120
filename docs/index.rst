@@ -1,4 +1,18 @@
-Bug Bounty PoC by Dan Frye
+.. Bug Bounty PoC documentation master file
 
-What do you call Batman who hasnt gone to church in a long time? Cristian Bale
+Welcome to Bug Bounty PoC!
+==========================
+
+Author: Dan Frye
+
+.. note::
+
+   What do you call Batman who hasn’t gone to church in a long time? Cristian Bale 😎
+
+Contents:
+---------
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Contents:
 
