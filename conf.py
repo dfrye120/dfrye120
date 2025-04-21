@@ -1,7 +1,7 @@
 # conf.py — basic Sphinx config
 import os
 import sys
-sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, os.path.abspath('docs'))
 
 project = 'OpenAI Education'
 author = 'Dan Frye'
